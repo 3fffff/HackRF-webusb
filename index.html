@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <title>HackRF WebUSB</title>
+
+
+  <script src="hackrf.js"></script>
+  <script src="complex.js"></script>
+  <script src="utils.js"></script>
+  <script src="comlink.js"></script>
+  <script src="script.js" type="module"></script>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    input[type="checkbox"] {
+      font-family: inherit;
+      /* 1 */
+      font-size: inherit;
+      /* 1 */
+      line-height: inherit;
+      /* 1 */
+      margin: 0;
+      /* 2 */
+    }
+
+    .btn {
+      box-sizing: border-box;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-color: transparent;
+      border: 2px solid #e74c3c;
+      border-radius: 0.6em;
+      color: #e74c3c;
+      cursor: pointer;
+      display: flex;
+      align-self: center;
+      font-size: 12px;
+      font-weight: 400;
+      line-height: 1;
+      margin: 5px;
+      padding: 0.6em 1.4em;
+      text-decoration: none;
+      text-align: center;
+      text-transform: uppercase;
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+    }
+
+    .fifth {
+      border-color: #8e44ad;
+      border-radius: 0;
+      color: #8e44ad;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      transition: color 150ms ease-in-out;
+    }
+
+    .fifth:after {
+      content: "";
+      position: absolute;
+      display: block;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 100%;
+      background: #8e44ad;
+      z-index: -1;
+      transition: width 150ms ease-in-out;
+    }
+
+    .fifth:hover {
+      color: #fff;
+    }
+
+    .fifth:hover:after {
+      width: 110%;
+    }
+
+    .btn:hover,
+    .btn:focus {
+      color: #fff;
+      outline: 0;
+    }
+
+    .actions {
+      padding: 10px;
+      min-width: 210px;
+      max-width: 210px;
+    }
+
+    .canvas-container {
+      flex-grow: 1;
+      background: #000;
+    }
+
+    .input_freq {
+      width: 45px
+    }
+
+    .input_gain {
+      width: 30px
+    }
+
+    #fft,
+    #waterfall {
+      width: 100%;
+      height: 100%;
+    }
+
+    .md-checkbox {
+      display: flex;
+    }
+
+    .axis {
+      position: absolute;
+      bottom: 0;
+      font-weight: bold;
+      font-size: 16px;
+      color: #fff;
+      border-style: solid;
+      border-width: 0 0 0 2px;
+      border-color: #f33;
+      padding: 0 2px;
+    }
+
+    .axis.right {
+      border-width: 0 2px 0 0;
+    }
+
+    .axisy {
+      bottom: 50%;
+      left: 0%;
+      color: white;
+      position: absolute;
+
+    }
+
+    .axises {
+      position: relative;
+      z-index: 9999
+    }
+
+    #hovery {
+      bottom: 0%;
+      height: 2px;
+      background-color: rebeccapurple;
+      position: absolute;
+      width: 100%;
+      color: white;
+    }
+
+    .input-number {
+      width: 20px;
+      padding: 0 12px;
+      vertical-align: top;
+      text-align: center;
+      outline: none;
+      border: none
+    }
+
+    .input-number-decrement,
+    .input-number-increment {
+      border: 1px solid #ccc;
+      height: 20px;
+      user-select: none;
+    }
+
+    .input-number-decrement,
+    .input-number-increment {
+      display: inline-block;
+      width: 45px;
+      line-height: 18px;
+      background: #f1f1f1;
+      color: #444;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .input-number-decrement:active,
+    .input-number-increment:active {
+      background: #ddd;
+    }
+
+    .input-number-decrement {
+      border-radius: 4px 4px 4px 4px;
+    }
+
+    .input-number-increment {
+      border-radius: 4px 4px 4px 4px;
+    }
+
+    .inpfreq {
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    .freq {
+      display: flex
+    }
+
+    .slidecontainer {
+      width: 100%;
+      /* Width of the outside container */
+    }
+
+    /* The slider itself */
+    .slider {
+      -webkit-appearance: none;
+      /* Override default CSS styles */
+      appearance: none;
+      width: 100%;
+      /* Full-width */
+      height: 25px;
+      /* Specified height */
+      background: #d3d3d3;
+      /* Grey background */
+      outline: none;
+      /* Remove outline */
+      opacity: 0.7;
+      /* Set transparency (for mouse-over effects on hover) */
+      -webkit-transition: .2s;
+      /* 0.2 seconds transition on hover */
+      transition: opacity .2s;
+    }
+
+    /* Mouse-over effects */
+    .slider:hover {
+      opacity: 1;
+      /* Fully shown on mouse-over */
+    }
+
+    /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      /* Override default look */
+      appearance: none;
+      width: 25px;
+      /* Set a specific slider handle width */
+      height: 25px;
+      /* Slider handle height */
+      background: #4CAF50;
+      /* Green background */
+      cursor: pointer;
+      /* Cursor on hover */
+    }
+
+    .slider::-moz-range-thumb {
+      width: 25px;
+      /* Set a specific slider handle width */
+      height: 25px;
+      /* Slider handle height */
+      background: #4CAF50;
+      /* Green background */
+      cursor: pointer;
+      /* Cursor on hover */
+    }
+  </style>
+</head>
+
+<body>
+  <div style="display:flex">
+    <div class="actions">
+      <div style="display:flex">
+        <button id='connect' class="btn fifth" type="button">connect</button>
+        <button id='start' class="btn fifth" type="button">start</button>
+      </div>
+      <div id='metric'>0.0 sweep/sec 0.0 MB/sec</div>
+      <div>
+        <div>
+          <div><label for="stf">Start Freq</label>
+            <input type="number" class="input_freq" step="1" max="7250" min="1" value="2400" id="stf"
+              required="required">
+            <span>MHz</span>
+          </div>
+          <div><label for="edf">End Freq</label>
+            <input type="number" class="input_freq" step="1" max="7250" min="1" value="2500" id="edf"
+              required="required">
+            <span>MHz</span>
+          </div>
+        </div>
+        <div>
+          <span>Window</span>
+          <select name="" id="windows">
+            <option value=0>Hamming</option>
+            <option value=1 selected>Blackman</option>
+            <option value=2>BlackmanHarris4</option>
+            <option value=3>BlackmanHarris7</option>
+            <option value=4>HannPoisson</option>
+            <option value=5>Youssef</option>
+          </select>
+        </div>
+        <div>
+          <span>FFT size</span>
+          <select name="" id="fftsize">
+            <option value=8>8</option>
+            <option value=16>16</option>
+            <option value=32>32</option>
+            <option value=64>64</option>
+            <option value=128>128</option>
+            <option value=256>256</option>
+            <option value=512 selected>512</option>
+            <option value=1024>1024</option>
+            <option value=2048>2048</option>
+            <option value=4096>4096</option>
+            <option value=8192>8192</option>
+            <option value=16384>16384</option>
+          </select>
+        </div>
+        <div>
+          <span>Color map</span>
+          <select name="" id="colormap">
+            <option value=1>JET</option>
+            <option value=2>HOT</option>
+            <option value=3>OLD</option>
+            <option value=4>GQRX</option>
+          </select>
+        </div>
+        <div>
+          <span>Demodulation</span>
+          <select name="" id="demodulation">
+            <option value=0>OFF</option>
+            <option value=1>AM</option>
+            <option value=2>NFM</option>
+            <option value=3>WFM</option>
+            <option value=4>LSB</option>
+            <option value=5>USB</option>
+          </select>
+        </div>
+        <hr class="md-divider md-theme-default">
+        <div><label for="lna">LNA Gain (IF)</label>
+          <input type="number" class="input_gain" step="8" max="40" min="0" value="0" id="lna" required="required">
+          <span>dB</span>
+        </div>
+        <div><label for="vga">VGA Gain</label>
+          <input type="number" class="input_gain" step="2" max="62" min="0" value="0" id="vga" required="required">
+          <span>dB</span>
+        </div>
+        <div>
+          <input id="amp" type="checkbox" true-value="true">
+          <span>RF Amp (14dB)</span>
+        </div>
+        <div>
+          <input id="app" type="checkbox" true-value="true">
+          <span>Antenna Port Power</span>
+        </div>
+        <div>
+          <input id="bars" type="checkbox" true-value="true">
+          <span>bars</span>
+        </div>
+        <!--<div>waterfall color</div>
+				<div class="slidecontainer">
+					<input type="range" min="1" max="100" value="50" class="slider" id="colorRange">
+				</div>-->
+      </div>
+    </div>
+    <div class="canvas-container">
+      <div style="width: 100%; height: 30vh; position: relative;"><canvas id="fft"></canvas>
+        <div id='axises'></div>
+        <div id='axisesy'></div>
+        <div class="axis" id="hover" style="top: 20px; left: 100%">0</div>
+      </div>
+      <div style="width: 100%; height: 70vh; position: relative;"><canvas id="waterfall"></canvas></div>
+    </div>
+  </div>
+
+</body>
+
+</html>
